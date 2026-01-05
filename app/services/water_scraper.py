@@ -38,20 +38,33 @@ class WaterScraper(BaseScraper):
             return self.cache[cache_key]['data']
 
         try:
-            url = self.base_url
-            response = self._make_request(url)
-            soup = self._parse_html(response.content)
-
             alerts = []
-            panel_group = soup.find('div', class_=re.compile(r'panel-group.*accordion'))
 
-            if panel_group:
-                panels = panel_group.find_all('div', class_='panel')
+            for page_num in range(1, 6):
+                logger.info(f"Scraping page {page_num} for water alerts")
 
-                for panel in panels:
-                    alert_data = self._extract_item_data(panel)
-                    if alert_data and search_term in alert_data['title']:
-                        alerts.append(alert_data)
+                url = f"{self.base_url}?page={page_num}" if page_num > 1 else self.base_url
+
+                try:
+                    response = self._make_request(url)
+                    soup = self._parse_html(response.content)
+
+                    accordion_links = soup.find_all('a', class_=['accordion-toggle', 'accordion-icon', 'link-unstyled', 'collapsed'])
+
+                    logger.info(f"Found {len(accordion_links)} accordion links on page {page_num}")
+
+                    for link in accordion_links:
+                        raw_title = link.get_text().strip()
+                        title = self.WHITESPACE_PATTERN.sub(' ', raw_title)
+
+                        if search_term in title:
+                            alert_data = self._extract_item_data(link)
+                            if alert_data:
+                                alerts.append(alert_data)
+
+                except Exception as e:
+                    logger.warning(f"Failed to scrape page {page_num}: {e}")
+                    continue
 
             self.cache[cache_key] = {
                 'data': alerts,
@@ -63,39 +76,34 @@ class WaterScraper(BaseScraper):
             logger.error(f"Water scraping failed for {cache_key}: {e}", exc_info=True)
             return self._handle_scraping_failure(cache_key)
 
-    def _extract_item_data(self, panel) -> Optional[Dict[str, Any]]:
+    def _extract_item_data(self, element) -> Optional[Dict[str, Any]]:
         try:
             alert_data = {}
 
-            # Try to find accordion link in panel-heading first, then directly in panel
-            heading = panel.find('div', class_='panel-heading')
-            search_container = heading if heading else panel
-
-            title_link = search_container.find('a', class_=re.compile(r'accordion-toggle'))
-            if not title_link:
-                return None
-
-            raw_title = title_link.get_text().strip()
+            raw_title = element.get_text().strip()
             alert_data['title'] = self.WHITESPACE_PATTERN.sub(' ', raw_title)
+
+            panel = element.find_parent('div', class_='panel')
+            if not panel:
+                return None
 
             body_wrapper = panel.find('div', class_=re.compile(r'panel-collapse'))
             if not body_wrapper:
                 return None
 
-            panel_body = body_wrapper.find('div',
-                                           class_='panel-body')
+            panel_body = body_wrapper.find('div', class_='panel-body')
             if not panel_body:
                 panel_body = body_wrapper.find('div', class_='panel body')
 
             message_parts = []
             if panel_body:
-                child_divs = panel_body.find_all('div')
-                for div in child_divs:
-                    text = div.get_text(strip=True)
-                    if text:
-                        message_parts.append(text)
+                for element in panel_body.descendants:
+                    if element.name is None:
+                        text = str(element).strip()
+                        if text:
+                            message_parts.append(text)
 
-            alert_data['message'] = "\n".join(message_parts)
+            alert_data['message'] = self.WHITESPACE_PATTERN.sub(' ', ' '.join(message_parts)).strip()
 
             alert_data['url'] = self.BASE_URL
             alert_data['published_at'] = datetime.now().isoformat()
