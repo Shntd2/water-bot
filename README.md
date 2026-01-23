@@ -1,14 +1,14 @@
-# Water Alert Bot 🌊
+# Water Alert Bot
 
 A Telegram bot that monitors water supply alerts for Yerevan and sends notifications to subscribed users.
 
 ## Features
 
-- 🔔 Automatic water alert monitoring every 60 minutes
-- 📱 Real-time Telegram notifications
-- 👥 Multi-user subscription management
-- 💾 File-based user database (temporarily)
-- ⚙️ Configurable polling and HTTP settings
+- Automatic water alert monitoring every 60 minutes
+- Real-time Telegram notifications
+- Multi-user subscription management
+- File-based user database (temporarily)
+- Configurable polling and HTTP settings
 
 ## Architecture
 
@@ -63,26 +63,6 @@ All settings can be configured via environment variables in `.env`:
 - `TELEGRAM_POLLING_TIMEOUT` - Long polling timeout (default: 30s)
 - `TELEGRAM_PARSE_MODE` - Default message parse mode (default: Markdown)
 
-### Scraper Settings (config/config.py)
-
-Existing scraper configuration for HTTP requests and caching.
-
-## User Database
-
-User subscriptions are stored in a JSON file at `app/data/users.json`. The database automatically:
-- Creates the data directory if it doesn't exist
-- Saves user subscriptions with location preferences
-- Tracks last notification timestamps
-- Manages active/inactive status
-
-## Logging
-
-Logs are written to:
-- Console (stdout)
-- File: `water_bot.log`
-
-Log level can be configured via `LOG_LEVEL` environment variable.
-
 ## How It Works
 
 ### Alert Monitoring Flow
@@ -94,53 +74,7 @@ Log level can be configured via `LOG_LEVEL` environment variable.
 5. **Notification**: Each active user receives new alerts via Telegram
 6. **Error Handling**: If a user blocks the bot, their subscription is deactivated
 
-### Session Management
-
-The `telegram_service` module provides:
-- `get_session()` - Initialize bot and dispatcher
-- `close_session()` - Cleanup resources
-- Automatic connection pooling with configurable limits
-- Custom timeout settings
-- Proper error handling and logging
-
-## Development
-
-### Project Structure
-
-- **app/config/settings.py** - Telegram bot configuration using Pydantic
-- **app/models/telegram_models.py** - User model and database management
-- **app/services/telegram_service.py** - Telegram session lifecycle
-- **app/services/water_scraper.py** - Water alert scraping logic
-- **app/handlers/message_handlers.py** - Bot command handlers
-- **main.py** - Application entry point with scheduler
-
-### Adding New Features
-
-1. **New Commands**: Add handlers in `app/handlers/message_handlers.py`
-2. **New Scrapers**: Extend `BaseScraper` in `app/base_scraper.py`
-3. **New Models**: Add to `app/models/telegram_models.py`
-4. **Configuration**: Update `app/config/settings.py`
-
-## Troubleshooting
-
-### Bot not receiving updates
-- Check your bot token is correct
-- Ensure no other instances are running
-- Verify network connectivity
-
-### Import errors
-- Ensure you're running from the project root
-- Activate your virtual environment
-- Reinstall dependencies
-
-### Database issues
-- Check `app/data/` directory exists
-- Verify write permissions
-- Check `users.json` format
-
 ## License
-
-[Your License Here]
 
 ## Contributing
 
