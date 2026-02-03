@@ -1,4 +1,5 @@
 import logging
+from app.config.settings import settings
 from aiogram import Router, F
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
@@ -11,20 +12,7 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 
-AVAILABLE_LOCATIONS = [
-    "Աջափնյակ",
-    "Արաբկիր",
-    "Ավան",
-    "Դավթաշեն",
-    "Էրեբունի",
-    "Կենտրոն",
-    "Մալաթիա-Սեբաստիա",
-    "Նոր Նորք",
-    "Նորք-Մարաշ",
-    "Նուբարաշեն",
-    "Շենգավիթ",
-    "Քանաքեր-Զեյթուն"
-]
+AVAILABLE_LOCATIONS = settings.AVAILABLE_LOCATIONS
 
 
 def create_location_keyboard() -> InlineKeyboardMarkup:

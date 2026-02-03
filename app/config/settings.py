@@ -84,6 +84,10 @@ class Settings(BaseSettings):
         ...,
         description="Base URL"
     )
+    AVAILABLE_LOCATIONS: list[str] = Field(
+        ...,
+        description="Tracking available districts"
+    )
 
     REDIS_HOST: str = Field(
         default="localhost",
