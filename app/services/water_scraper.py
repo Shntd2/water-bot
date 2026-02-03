@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 class WaterScraper(BaseScraper):
     BASE_URL = settings.BASE_URL
-    TARGET_LOCATION = settings.TARGET_LOCATION
 
     def __init__(self,
                  cache_timeout: int = None,
@@ -31,7 +30,11 @@ class WaterScraper(BaseScraper):
         return f"water_alerts_{location or 'default'}"
 
     def get_data(self, location: Optional[str] = None) -> List[Dict[str, Any]]:
-        search_term = location if location else self.TARGET_LOCATION
+        if not location:
+            logger.error("No location provided for water alert scraping")
+            return []
+
+        search_term = location
         cache_key = self.get_cache_key(search_term)
 
         if self.is_cache_valid(cache_key):
@@ -127,6 +130,4 @@ class WaterScraper(BaseScraper):
         ]
 
     def get_warm_cache_queries(self) -> List[Tuple]:
-        return [
-            (self.TARGET_LOCATION,),
-        ]
+        return []

@@ -1,21 +1,21 @@
 import os
-from pydantic_settings import BaseSettings
-from pydantic import ConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class Settings(BaseSettings):
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         extra='ignore',
         env_file='.env',
         env_file_encoding='utf-8',
         case_sensitive=True
     )
-    APP_NAME: str = "GitHub ProductHunt Scraper"
-    APP_DESCRIPTION: str = "FastAPI-based web scraping service optimized for Glance dashboard integration. Provides trending data from GitHub and Product Hunt"
-    APP_VERSION: str = "2.1"
+    APP_NAME: str = "Water Bot"
+    APP_DESCRIPTION: str = "FastAPI-based Telegram bot that monitors water supply alerts in Yerevan"
+    APP_VERSION: str = "1.0"
 
     HOST: str = os.getenv("HOST")
     PORT: int = int(os.getenv("PORT"))

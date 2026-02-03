@@ -83,7 +83,6 @@ env/
 venv/
 ENV/
 env.bak/
-venv/
 venv.bak/
 
 .spyderproject

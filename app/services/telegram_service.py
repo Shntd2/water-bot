@@ -40,10 +40,8 @@ class TelegramService:
     async def close_session(self):
         try:
             if self._bot:
-                # Close the bot's internal session
-                session = await self._bot.session()
-                if session:
-                    await session.close()
+                if self._bot.session:
+                    await self._bot.session.close()
                 self._bot = None
                 logger.info("Bot session closed")
 

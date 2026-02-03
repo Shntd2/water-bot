@@ -4,18 +4,17 @@ from pydantic import BaseModel, Field
 import json
 from pathlib import Path
 
-from app.config.settings import settings
-
 
 class User(BaseModel):
     chat_id: int = Field(..., description="Telegram chat ID")
     username: Optional[str] = Field(None, description="Telegram username")
     first_name: Optional[str] = Field(None, description="User's first name")
     last_name: Optional[str] = Field(None, description="User's last name")
-    location: str = Field(default=settings.TARGET_LOCATION, description="Water alert location to monitor")
+    location: Optional[str] = Field(None, description="Water alert location to monitor")
     subscribed_at: datetime = Field(default_factory=datetime.now, description="Subscription timestamp")
     is_active: bool = Field(default=True, description="Whether the subscription is active")
     last_notified: Optional[datetime] = Field(None, description="Last notification timestamp")
+    last_location_changed: Optional[datetime] = Field(None, description="Last location change timestamp")
 
     class Config:
         json_encoders = {
@@ -45,6 +44,8 @@ class UserDatabase:
                             user_data['subscribed_at'] = datetime.fromisoformat(user_data['subscribed_at'])
                         if user_data.get('last_notified'):
                             user_data['last_notified'] = datetime.fromisoformat(user_data['last_notified'])
+                        if user_data.get('last_location_changed'):
+                            user_data['last_location_changed'] = datetime.fromisoformat(user_data['last_location_changed'])
                         self._users[chat_id] = User(**user_data)
             except Exception as e:
                 print(f"Error loading user database: {e}")
@@ -97,5 +98,6 @@ class UserDatabase:
             user for user in self._users.values()
             if user.is_active and user.location == location
         ]
+
 
 user_db = UserDatabase()
