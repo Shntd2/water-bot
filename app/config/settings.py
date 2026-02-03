@@ -110,5 +110,30 @@ class Settings(BaseSettings):
         description="TTL for sent alerts in seconds (default: 14 days)"
     )
 
+    POSTGRES_USER: str = Field(
+        ...,
+        description="PostgreSQL username"
+    )
+    POSTGRES_PASSWORD: str = Field(
+        ...,
+        description="PostgreSQL password"
+    )
+    POSTGRES_HOST: str = Field(
+        default="localhost",
+        description="PostgreSQL host"
+    )
+    POSTGRES_PORT: int = Field(
+        default=5432,
+        description="PostgreSQL port"
+    )
+    POSTGRES_DB: str = Field(
+        ...,
+        description="PostgreSQL database name"
+    )
+    POSTGRES_ECHO: bool = Field(
+        default=False,
+        description="SQLAlchemy echo SQL queries"
+    )
+
 
 settings = Settings()

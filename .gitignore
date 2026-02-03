@@ -120,4 +120,4 @@ temp/
 
 app/data/
 water_bot.log
-*.log
+.idea/

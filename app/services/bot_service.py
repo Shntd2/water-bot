@@ -6,7 +6,8 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 
 from app.config.settings import settings
-from app.models.telegram_models import user_db, User
+from app.models.user_model import User
+from app.services.user_service import user_service
 from app.services.telegram_service import telegram_service
 from app.services.redis_service import redis_service
 from app.services.water_scraper import WaterScraper
@@ -38,7 +39,7 @@ class BotService:
         except TelegramAPIError as e:
             logger.error(f"Failed to send alert to user {user.chat_id}: {e}")
             if "bot was blocked" in str(e).lower():
-                user_db.update_user(user.chat_id, is_active=False)
+                user_service.update_user(user.chat_id, is_active=False)
                 logger.info(f"Deactivated user {user.chat_id} - bot blocked")
             return False
         except Exception as e:
@@ -55,7 +56,7 @@ class BotService:
                 logger.error("Bot not initialized, skipping alert check")
                 return
 
-            active_users = user_db.get_active_users()
+            active_users = user_service.get_active_users()
 
             if not active_users:
                 logger.info("No active users to notify")
@@ -104,7 +105,7 @@ class BotService:
                                 if alert_id:
                                     await redis_service.mark_alert_as_sent(user.chat_id, alert_id)
 
-                                user_db.update_user(user.chat_id, last_notified=datetime.now())
+                                user_service.update_user(user.chat_id, last_notified=datetime.now())
 
                             await asyncio.sleep(0.1)
 

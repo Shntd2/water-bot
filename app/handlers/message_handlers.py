@@ -5,7 +5,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime
 
-from app.models.telegram_models import User, user_db
+from app.services.user_service import user_service
 from app.services.water_scraper import WaterScraper
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def create_location_keyboard() -> InlineKeyboardMarkup:
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     chat_id = message.chat.id
-    user = user_db.get_user(chat_id)
+    user = user_service.get_user(chat_id)
 
     welcome_text = """
 🛠️ *Welcome to Water Alert Bot!*
@@ -78,7 +78,7 @@ This bot monitors water supply stats and sends you notifications when new alerts
 @router.message(Command("subscribe"))
 async def cmd_subscribe(message: Message):
     chat_id = message.chat.id
-    user = user_db.get_user(chat_id)
+    user = user_service.get_user(chat_id)
 
     if user:
         if user.is_active and user.location:
@@ -96,7 +96,7 @@ async def cmd_subscribe(message: Message):
                 parse_mode="Markdown"
             )
         else:
-            user_db.update_user(chat_id, is_active=True)
+            user_service.update_user(chat_id, is_active=True)
             await message.answer(
                 "✅ *Subscription reactivated!*\n\n"
                 f"You will now receive water alerts again for: *{user.location}*",
@@ -104,16 +104,14 @@ async def cmd_subscribe(message: Message):
             )
             logger.info(f"User resubscribed: {chat_id}")
     else:
-        new_user = User(
+        user_service.add_user(
             chat_id=chat_id,
             username=message.from_user.username,
             first_name=message.from_user.first_name,
             last_name=message.from_user.last_name,
             location=None,
-            subscribed_at=datetime.now(),
-            is_active=True,
+            is_active=True
         )
-        user_db.add_user(new_user)
         logger.info(f"New user created: {chat_id} (@{message.from_user.username})")
 
         await message.answer(
@@ -127,7 +125,7 @@ async def cmd_subscribe(message: Message):
 @router.message(Command("location"))
 async def cmd_change_location(message: Message):
     chat_id = message.chat.id
-    user = user_db.get_user(chat_id)
+    user = user_service.get_user(chat_id)
 
     if not user or not user.is_active:
         await message.answer(
@@ -181,7 +179,7 @@ async def handle_location_selection(callback: CallbackQuery):
         await callback.answer("Invalid location selected", show_alert=True)
         return
 
-    user = user_db.get_user(chat_id)
+    user = user_service.get_user(chat_id)
     if not user:
         await callback.answer("User not found. Please try /subscribe again.", show_alert=True)
         return
@@ -194,7 +192,7 @@ async def handle_location_selection(callback: CallbackQuery):
     if is_location_change:
         update_data["last_location_changed"] = datetime.now()
 
-    user_db.update_user(chat_id, **update_data)
+    user_service.update_user(chat_id, **update_data)
 
     if is_location_change:
         logger.info(f"User {chat_id} changed location from {old_location} to {selected_location}")
@@ -219,10 +217,10 @@ async def handle_location_selection(callback: CallbackQuery):
 @router.message(Command("unsubscribe"))
 async def cmd_unsubscribe(message: Message):
     chat_id = message.chat.id
-    user = user_db.get_user(chat_id)
+    user = user_service.get_user(chat_id)
 
     if user and user.is_active:
-        user_db.update_user(chat_id, is_active=False)
+        user_service.update_user(chat_id, is_active=False)
         await message.answer(
             "❌ *Unsubscribed successfully!*\n\n"
             "You will no longer receive water alerts.\n"
@@ -241,7 +239,7 @@ async def cmd_unsubscribe(message: Message):
 @router.message(Command("status"))
 async def cmd_status(message: Message):
     chat_id = message.chat.id
-    user = user_db.get_user(chat_id)
+    user = user_service.get_user(chat_id)
 
     if user:
         status_emoji = "✅" if user.is_active else "❌"
@@ -277,7 +275,7 @@ async def cmd_status(message: Message):
 @router.message(Command("check"))
 async def cmd_check(message: Message):
     chat_id = message.chat.id
-    user = user_db.get_user(chat_id)
+    user = user_service.get_user(chat_id)
 
     if not user or not user.location:
         await message.answer(

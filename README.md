@@ -7,7 +7,7 @@ A Telegram bot that monitors water supply alerts for Yerevan and sends notificat
 - Automatic water alert monitoring every 60 minutes
 - Real-time Telegram notifications
 - Multi-user subscription management
-- File-based user database (temporarily)
+- PostgreSQL database with SQLAlchemy ORM
 - Configurable polling and HTTP settings
 
 ## Architecture
@@ -19,16 +19,22 @@ water-bot/
 ├── app/
 │   ├── api/                    # API endpoints (if needed)
 │   ├── config/                 # Configuration files
-│   │   └── settings.py         # Telegram bot settings
+│   │   ├── settings.py         # Application settings
+│   │   └── database.py         # Database configuration
 │   ├── handlers/               # Message handlers
 │   │   └── message_handlers.py # Bot command handlers
 │   ├── models/                 # Data models
-│   │   └── telegram_models.py  # User subscription models
+│   │   └── user_model.py       # SQLAlchemy User model
+│   ├── repositories/           # Data access layer
+│   │   └── user_repository.py  # User CRUD operations
 │   ├── services/               # Business logic
 │   │   ├── telegram_service.py # Telegram session management
+│   │   ├── user_service.py     # User management service
+│   │   ├── bot_service.py      # Bot alert processing
 │   │   └── water_scraper.py    # Water alert scraper
 │   └── base_scraper.py         # Base scraper class
 ├── config/                     # Legacy config (for scrapers)
+├── migrations/                 # Database migrations
 ├── main.py                     # Main application entry point
 └── requirements.txt            # Python dependencies
 ```
