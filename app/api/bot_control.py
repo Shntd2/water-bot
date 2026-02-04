@@ -1,5 +1,6 @@
 import asyncio
-from fastapi import APIRouter, HTTPException, Depends
+from aiogram.handlers import MessageHandler
+from fastapi import APIRouter, HTTPException
 from typing import Optional, Dict, Any, Union
 from app.services.telegram_service import telegram_service
 import logging
@@ -14,6 +15,7 @@ bot_state: Dict[str, Union[bool, dict, Optional[MessageHandler], Optional[asynci
     "message_handler": None,
     "polling_task": None
 }
+
 
 @router.post("/start-bot")
 async def start_bot():

@@ -6,10 +6,10 @@ from app.config.settings import settings
 
 
 def get_database_url() -> str:
-    return (
-        f"postgresql+psycopg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
-        f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
-    )
+    url = settings.POSTGRES_URL
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return url
 
 
 engine = create_engine(
@@ -18,6 +18,10 @@ engine = create_engine(
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
+    connect_args={
+        "sslmode": "require",
+        "channel_binding": "require"
+    } if "sslmode" not in settings.POSTGRES_URL else {}
 )
 
 SessionLocal = sessionmaker(

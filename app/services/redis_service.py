@@ -14,17 +14,15 @@ class RedisService:
 
     async def connect(self):
         try:
-            self.redis_client = redis.Redis(
-                host=settings.REDIS_HOST,
-                port=settings.REDIS_PORT,
-                db=settings.REDIS_DB,
-                password=settings.REDIS_PASSWORD,
+            self.redis_client = redis.from_url(
+                settings.REDIS_URL,
                 decode_responses=True,
+                ssl_cert_reqs=None,
                 socket_connect_timeout=5,
                 socket_keepalive=True,
             )
             await self.redis_client.ping()
-            logger.info(f"Connected to Redis at {settings.REDIS_HOST}:{settings.REDIS_PORT}")
+            logger.info(f"Connected to Redis using URL: {settings.REDIS_URL.split('@')[-1] if '@' in settings.REDIS_URL else settings.REDIS_URL.split('//')[1].split(':')[0]}")
         except Exception as e:
             logger.error(f"Failed to connect to Redis: {e}", exc_info=True)
             raise

@@ -89,46 +89,18 @@ class Settings(BaseSettings):
         description="Tracking available districts"
     )
 
-    REDIS_HOST: str = Field(
-        default="localhost",
-        description="Redis host"
-    )
-    REDIS_PORT: int = Field(
-        default=6379,
-        description="Redis port"
-    )
-    REDIS_DB: int = Field(
-        default=0,
-        description="Redis database number"
-    )
-    REDIS_PASSWORD: str = Field(
-        default=None,
-        description="Redis password"
+    REDIS_URL: str = Field(
+        ...,
+        description="Redis connection URL"
     )
     REDIS_ALERT_TTL: int = Field(
         default=1209600,
         description="TTL for sent alerts in seconds (default: 14 days)"
     )
 
-    POSTGRES_USER: str = Field(
+    POSTGRES_URL: str = Field(
         ...,
-        description="PostgreSQL username"
-    )
-    POSTGRES_PASSWORD: str = Field(
-        ...,
-        description="PostgreSQL password"
-    )
-    POSTGRES_HOST: str = Field(
-        default="localhost",
-        description="PostgreSQL host"
-    )
-    POSTGRES_PORT: int = Field(
-        default=5432,
-        description="PostgreSQL port"
-    )
-    POSTGRES_DB: str = Field(
-        ...,
-        description="PostgreSQL database name"
+        description="PostgreSQL connection URL"
     )
     POSTGRES_ECHO: bool = Field(
         default=False,
