@@ -1,5 +1,6 @@
 import requests
 from requests.adapters import HTTPAdapter
+import cloudscraper
 from bs4 import BeautifulSoup
 import re
 from typing import Optional, List, Dict, Any, Tuple
@@ -35,8 +36,15 @@ class BaseScraper(ABC):
         self.cache = {}
         self.executor = ThreadPoolExecutor(max_workers=max_workers or scraper_settings.MAX_WORKERS)
 
-    def _setup_session(self) -> requests.Session:
-        session = requests.Session()
+    def _setup_session(self) -> cloudscraper.CloudScraper:
+        session = cloudscraper.create_scraper(
+            browser={
+                'browser': 'chrome',
+                'platform': 'windows',
+                'desktop': True,
+            },
+            delay=10,
+        )
 
         adapter = HTTPAdapter(
             pool_connections=scraper_settings.POOL_CONNECTIONS,
@@ -58,7 +66,6 @@ class BaseScraper(ABC):
             logger.info("Proxy configured for scraping requests")
 
         session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.9,hy;q=0.8',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -68,14 +75,20 @@ class BaseScraper(ABC):
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
             'Sec-Fetch-User': '?1',
-            'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Ch-Ua-Platform': '"Windows"',
             'Cache-Control': 'max-age=0',
-            'Referer': self.base_url,
         })
 
+        self._warm_up_session(session)
+
         return session
+
+    def _warm_up_session(self, session: cloudscraper.CloudScraper):
+        try:
+            logger.info(f"Warming up session with base URL: {self.base_url}")
+            session.get(self.base_url, timeout=self.request_timeout)
+            time.sleep(random.uniform(1.0, 2.0))
+        except Exception as e:
+            logger.warning(f"Session warm-up failed: {e}")
 
     def is_cache_valid(self, cache_key: str) -> bool:
         if cache_key not in self.cache:
@@ -90,31 +103,47 @@ class BaseScraper(ABC):
 
         return is_valid
 
-    def _make_request(self, url: str, params: Dict = None) -> requests.Response:
-        try:
-            delay = random.uniform(0.5, 2.0)
-            time.sleep(delay)
+    def _make_request(self, url: str, params: Dict = None, max_retries: int = 3) -> requests.Response:
+        last_exception = None
 
-            response = self.session.get(
-                url,
-                params=params,
-                timeout=self.request_timeout,
-                stream=True
-            )
-            response.raise_for_status()
-            return response
-        except requests.Timeout:
-            logger.error(f"Request timeout for {url} (timeout: {self.request_timeout}s)")
-            raise
-        except requests.ConnectionError as e:
-            logger.error(f"Connection error for {url}: {e}")
-            raise
-        except requests.HTTPError as e:
-            logger.error(f"HTTP error for {url}: {e} (status: {e.response.status_code})")
-            raise
-        except requests.RequestException as e:
-            logger.error(f"Request failed for {url}: {e}")
-            raise
+        for attempt in range(max_retries):
+            try:
+                delay = random.uniform(1.0, 3.0) if attempt == 0 else random.uniform(3.0, 6.0) * (attempt + 1)
+                time.sleep(delay)
+
+                response = self.session.get(
+                    url,
+                    params=params,
+                    timeout=self.request_timeout,
+                    stream=True
+                )
+                response.raise_for_status()
+                return response
+
+            except requests.HTTPError as e:
+                last_exception = e
+                if e.response.status_code == 403:
+                    logger.warning(f"403 Forbidden for {url}, attempt {attempt + 1}/{max_retries}")
+                    if attempt < max_retries - 1:
+                        backoff = (2 ** attempt) * random.uniform(2.0, 4.0)
+                        logger.info(f"Retrying in {backoff:.1f}s...")
+                        time.sleep(backoff)
+                        continue
+                logger.error(f"HTTP error for {url}: {e} (status: {e.response.status_code})")
+                raise
+
+            except requests.Timeout:
+                logger.error(f"Request timeout for {url} (timeout: {self.request_timeout}s)")
+                raise
+            except requests.ConnectionError as e:
+                logger.error(f"Connection error for {url}: {e}")
+                raise
+            except requests.RequestException as e:
+                logger.error(f"Request failed for {url}: {e}")
+                raise
+
+        if last_exception:
+            raise last_exception
 
     def _parse_html(self, content: bytes) -> BeautifulSoup:
         try:
