@@ -1,6 +1,8 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, field_validator
+
+from .validator import validate_json_list
 
 
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
@@ -88,6 +90,10 @@ class Settings(BaseSettings):
         ...,
         description="Tracking available districts"
     )
+
+    @field_validator('AVAILABLE_LOCATIONS', mode='before')
+    def parse_available_locations(cls, v):
+        return validate_json_list(v, field_name="AVAILABLE_LOCATIONS")
 
     REDIS_URL: str = Field(
         ...,
