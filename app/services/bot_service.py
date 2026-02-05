@@ -84,7 +84,7 @@ class BotService:
                 logger.info(f"Checking alerts for location: {location} ({len(users)} users)")
 
                 try:
-                    alerts = scraper.get_data(location=location)
+                    alerts = await scraper.get_data(location=location)
 
                     if not alerts:
                         logger.info(f"No water alerts found for {location}")

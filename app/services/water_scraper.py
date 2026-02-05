@@ -29,7 +29,7 @@ class WaterScraper(BaseScraper):
     def get_cache_key(self, location: Optional[str] = None) -> str:
         return f"water_alerts_{location or 'default'}"
 
-    def get_data(self, location: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def get_data(self, location: Optional[str] = None) -> List[Dict[str, Any]]:
         if not location:
             logger.error("No location provided for water alert scraping")
             return []
@@ -49,7 +49,7 @@ class WaterScraper(BaseScraper):
                 url = f"{self.base_url}?page={page_num}" if page_num > 1 else self.base_url
 
                 try:
-                    response = self._make_request(url)
+                    response = await self._make_request(url)
                     soup = self._parse_html(response.content)
 
                     accordion_links = soup.find_all('a', class_=['accordion-toggle', 'accordion-icon', 'link-unstyled', 'collapsed'])

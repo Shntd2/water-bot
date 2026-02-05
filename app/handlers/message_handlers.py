@@ -289,7 +289,7 @@ async def cmd_check(message: Message):
 
     try:
         scraper = WaterScraper()
-        alerts = scraper.get_data(location=user.location)
+        alerts = await scraper.get_data(location=user.location)
 
         if not alerts:
             await message.answer(
