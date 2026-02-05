@@ -17,7 +17,6 @@ class RedisService:
             self.redis_client = redis.from_url(
                 settings.REDIS_URL,
                 decode_responses=True,
-                ssl_cert_reqs=None,
                 socket_connect_timeout=5,
                 socket_keepalive=True,
             )

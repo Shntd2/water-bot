@@ -11,12 +11,13 @@ from app.services.telegram_service import telegram_service
 from app.services.redis_service import redis_service
 from app.services.bot_service import bot_service
 
+import os
+
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, os.getenv('LOG_LEVEL', 'INFO').upper()),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler('water_bot.log', encoding='utf-8')
+        logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger(__name__)
@@ -25,8 +26,23 @@ logger = logging.getLogger(__name__)
 async def on_startup():
     logger.info("Starting Water Alert Bot...")
 
+    max_retries = 5
+    retry_delay = 2
+
     try:
-        await redis_service.connect()
+        for attempt in range(1, max_retries + 1):
+            try:
+                await redis_service.connect()
+                logger.info("Redis connection established successfully")
+                break
+            except Exception as e:
+                if attempt < max_retries:
+                    wait_time = retry_delay * (2 ** (attempt - 1))
+                    logger.warning(f"Redis connection attempt {attempt}/{max_retries} failed: {e}. Retrying in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                else:
+                    logger.error(f"Failed to connect to Redis after {max_retries} attempts")
+                    raise
 
         bot, dispatcher = await telegram_service.get_session()
 
@@ -62,7 +78,7 @@ async def on_shutdown(scheduler: AsyncIOScheduler):
 
     try:
         if scheduler and scheduler.running:
-            scheduler.shutdown(wait=False)
+            scheduler.shutdown(wait=True)
             logger.info("Scheduler stopped")
 
         await telegram_service.close_session()

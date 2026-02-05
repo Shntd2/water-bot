@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0"
 
     HOST: str = os.getenv("HOST")
-    PORT: int = int(os.getenv("PORT"))
+    PORT: int = int(os.getenv("PORT", "8000"))
     DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
     CACHE_TIMEOUT: int = int(os.getenv("CACHE_TIMEOUT"))
