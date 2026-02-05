@@ -125,5 +125,14 @@ class Settings(BaseSettings):
         description="SQLAlchemy echo SQL queries"
     )
 
+    HTTP_PROXY: str = Field(
+        default="",
+        description="HTTP proxy URL (optional, e.g., http://user:pass@proxy:port)"
+    )
+    HTTPS_PROXY: str = Field(
+        default="",
+        description="HTTPS proxy URL (optional, e.g., http://user:pass@proxy:port)"
+    )
+
 
 settings = Settings()
