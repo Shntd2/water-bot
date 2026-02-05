@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 bot_state: dict = {
     "scheduler": None,
-    "is_healthy": False
+    "is_healthy": False,
+    "polling_task": None
 }
 
 
@@ -22,9 +23,14 @@ bot_state: dict = {
 async def lifespan(_app: FastAPI):
     logger.info("Starting health server and bot...")
     scheduler: Optional[AsyncIOScheduler] = None
+    polling_task = None
     try:
         scheduler = await on_startup()
         bot_state["scheduler"] = scheduler
+
+        polling_task = asyncio.create_task(start_bot_polling())
+        bot_state["polling_task"] = polling_task
+
         bot_state["is_healthy"] = True
         logger.info("Bot started successfully, health server ready")
         yield
@@ -34,6 +40,14 @@ async def lifespan(_app: FastAPI):
         yield
     finally:
         logger.info("Shutting down bot...")
+
+        if polling_task and not polling_task.done():
+            polling_task.cancel()
+            try:
+                await polling_task
+            except asyncio.CancelledError:
+                logger.info("Polling task cancelled")
+
         if scheduler is not None:
             await on_shutdown(scheduler)
 
@@ -89,8 +103,6 @@ async def start_bot_polling():
 def main():
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8000"))
-
-    asyncio.create_task(start_bot_polling())
 
     uvicorn.run(
         app,
