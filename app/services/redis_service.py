@@ -14,14 +14,22 @@ class RedisService:
 
     async def connect(self):
         try:
+            redis_url = settings.REDIS_URL
+
+            if 'upstash.io' in redis_url or 'redislabs.com' in redis_url:
+                if redis_url.startswith('redis://'):
+                    redis_url = redis_url.replace('redis://', 'rediss://', 1)
+                    logger.info("Converting Redis URL to use SSL (rediss://)")
+
             self.redis_client = redis.from_url(
-                settings.REDIS_URL,
+                redis_url,
                 decode_responses=True,
                 socket_connect_timeout=5,
                 socket_keepalive=True,
+                ssl_cert_reqs=None
             )
             await self.redis_client.ping()
-            logger.info(f"Connected to Redis using URL: {settings.REDIS_URL.split('@')[-1] if '@' in settings.REDIS_URL else settings.REDIS_URL.split('//')[1].split(':')[0]}")
+            logger.info(f"Connected to Redis using URL: {redis_url.split('@')[-1] if '@' in redis_url else redis_url.split('//')[1].split(':')[0]}")
         except Exception as e:
             logger.error(f"Failed to connect to Redis: {e}", exc_info=True)
             raise
