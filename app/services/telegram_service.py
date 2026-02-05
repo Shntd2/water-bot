@@ -52,6 +52,49 @@ class TelegramService:
         except Exception as e:
             logger.error(f"Error closing Telegram session: {e}", exc_info=True)
 
+    async def setup_webhook(self, webhook_url: str, secret_token: Optional[str] = None) -> bool:
+        if not self._bot:
+            logger.error("Bot not initialized. Call get_session() first.")
+            return False
+
+        try:
+            await self._bot.delete_webhook(drop_pending_updates=True)
+            logger.info("Deleted existing webhook")
+
+            webhook_info = await self._bot.set_webhook(
+                url=webhook_url,
+                secret_token=secret_token if secret_token else None,
+                allowed_updates=["message", "callback_query", "inline_query"],
+                drop_pending_updates=False
+            )
+
+            if webhook_info:
+                logger.info(f"Webhook set successfully: {webhook_url}")
+
+                webhook_info = await self._bot.get_webhook_info()
+                logger.info(f"Webhook info: {webhook_info}")
+                return True
+            else:
+                logger.error("Failed to set webhook")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error setting webhook: {e}", exc_info=True)
+            return False
+
+    async def delete_webhook(self) -> bool:
+        if not self._bot:
+            logger.error("Bot not initialized. Call get_session() first.")
+            return False
+
+        try:
+            await self._bot.delete_webhook(drop_pending_updates=True)
+            logger.info("Webhook deleted successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting webhook: {e}", exc_info=True)
+            return False
+
     async def send_message(
         self,
         chat_id: int,

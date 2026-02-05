@@ -1,21 +1,21 @@
-import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
 from typing import Optional
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 import uvicorn
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from aiogram.types import Update
 
 from main import on_startup, on_shutdown
+from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
 
 bot_state: dict = {
     "scheduler": None,
-    "is_healthy": False,
-    "polling_task": None
+    "is_healthy": False
 }
 
 
@@ -23,16 +23,25 @@ bot_state: dict = {
 async def lifespan(_app: FastAPI):
     logger.info("Starting health server and bot...")
     scheduler: Optional[AsyncIOScheduler] = None
-    polling_task = None
     try:
+        from app.services.telegram_service import telegram_service
+
         scheduler = await on_startup()
         bot_state["scheduler"] = scheduler
 
-        polling_task = asyncio.create_task(start_bot_polling())
-        bot_state["polling_task"] = polling_task
+        webhook_secret = settings.TELEGRAM_WEBHOOK_SECRET if settings.TELEGRAM_WEBHOOK_SECRET else None
+        webhook_setup_success = await telegram_service.setup_webhook(
+            webhook_url=settings.TELEGRAM_WEBHOOK_URL,
+            secret_token=webhook_secret
+        )
 
-        bot_state["is_healthy"] = True
-        logger.info("Bot started successfully, health server ready")
+        if webhook_setup_success:
+            bot_state["is_healthy"] = True
+            logger.info("Bot started successfully with webhook, health server ready")
+        else:
+            logger.error("Failed to setup webhook")
+            bot_state["is_healthy"] = False
+
         yield
     except Exception as e:
         logger.error(f"Failed to start bot: {e}", exc_info=True)
@@ -40,13 +49,6 @@ async def lifespan(_app: FastAPI):
         yield
     finally:
         logger.info("Shutting down bot...")
-
-        if polling_task and not polling_task.done():
-            polling_task.cancel()
-            try:
-                await polling_task
-            except asyncio.CancelledError:
-                logger.info("Polling task cancelled")
 
         if scheduler is not None:
             await on_shutdown(scheduler)
@@ -86,18 +88,28 @@ async def readiness_check():
     }
 
 
-async def start_bot_polling():
+@app.post(settings.TELEGRAM_WEBHOOK_PATH)
+async def webhook_handler(request: Request):
     from app.services.telegram_service import telegram_service
-    from app.config.settings import settings
 
-    bot, dispatcher = await telegram_service.get_session()
+    try:
+        if settings.TELEGRAM_WEBHOOK_SECRET:
+            secret_header = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+            if secret_header != settings.TELEGRAM_WEBHOOK_SECRET:
+                logger.warning("Invalid webhook secret token")
+                return Response(status_code=403)
 
-    logger.info("Starting bot polling in background...")
-    await dispatcher.start_polling(
-        bot,
-        polling_timeout=settings.TELEGRAM_POLLING_TIMEOUT,
-        handle_signals=False,
-    )
+        update_data = await request.json()
+
+        bot, dispatcher = await telegram_service.get_session()
+        update = Update(**update_data)
+        await dispatcher.feed_update(bot, update)
+
+        return Response(status_code=200)
+
+    except Exception as e:
+        logger.error(f"Error processing webhook update: {e}", exc_info=True)
+        return Response(status_code=500)
 
 
 def main():

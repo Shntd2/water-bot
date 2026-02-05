@@ -81,6 +81,18 @@ class Settings(BaseSettings):
         default="typing",
         description="Default chat action to send"
     )
+    TELEGRAM_WEBHOOK_URL: str = Field(
+        ...,
+        description="Public URL for Telegram webhook"
+    )
+    TELEGRAM_WEBHOOK_PATH: str = Field(
+        default="/webhook",
+        description="Path for webhook endpoint"
+    )
+    TELEGRAM_WEBHOOK_SECRET: str = Field(
+        default="",
+        description="Secret token for webhook security"
+    )
 
     BASE_URL: str = Field(
         ...,
