@@ -30,6 +30,10 @@ async def on_startup():
     retry_delay = 2
 
     try:
+        from app.config.database import init_db
+        init_db()
+        logger.info("Database schema initialized successfully")
+
         for attempt in range(1, max_retries + 1):
             try:
                 await redis_service.connect()

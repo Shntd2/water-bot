@@ -47,4 +47,6 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
+    from app.models.user_model import User
+
     Base.metadata.create_all(bind=engine)
