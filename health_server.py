@@ -105,11 +105,13 @@ def main():
     port = int(os.getenv("PORT", "8000"))
 
     uvicorn.run(
-        app,
+        "health_server:app",
         host=host,
         port=port,
         log_level=os.getenv("LOG_LEVEL", "info").lower(),
-        access_log=True
+        access_log=True,
+        reload=False,
+        workers=1
     )
 
 
