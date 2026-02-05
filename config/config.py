@@ -1,4 +1,3 @@
-import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from dotenv import load_dotenv
@@ -17,21 +16,21 @@ class Settings(BaseSettings):
     APP_DESCRIPTION: str = "FastAPI-based Telegram bot that monitors water supply alerts in Yerevan"
     APP_VERSION: str = "1.0"
 
-    HOST: str = os.getenv("HOST")
-    PORT: int = int(os.getenv("PORT", "8000"))
-    DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+    DEBUG: bool = False
 
-    CACHE_TIMEOUT: int = int(os.getenv("CACHE_TIMEOUT"))
-    MAX_WORKERS: int = int(os.getenv("MAX_WORKERS"))
-    REQUEST_TIMEOUT: int = int(os.getenv("REQUEST_TIMEOUT"))
-    MAX_REPOSITORIES: int = int(os.getenv("MAX_REPOSITORIES"))
+    CACHE_TIMEOUT: int = 3600
+    MAX_WORKERS: int = 4
+    REQUEST_TIMEOUT: int = 15
+    MAX_REPOSITORIES: int = 50
 
-    POOL_CONNECTIONS: int = int(os.getenv("POOL_CONNECTIONS"))
-    POOL_MAXSIZE: int = int(os.getenv("POOL_MAXSIZE"))
-    MAX_RETRIES: int = int(os.getenv("MAX_RETRIES"))
-    POOL_BLOCK: bool = os.getenv("POOL_BLOCK", "False").lower() in ("true", "1", "yes")
+    POOL_CONNECTIONS: int = 10
+    POOL_MAXSIZE: int = 20
+    MAX_RETRIES: int = 3
+    POOL_BLOCK: bool = False
 
-    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+    LOG_LEVEL: str = "INFO"
 
 
 settings = Settings()
