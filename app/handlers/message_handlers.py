@@ -3,7 +3,7 @@ from app.config.settings import settings
 from aiogram import Router, F
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.services.user_service import user_service
 from app.services.water_scraper import WaterScraper
@@ -58,7 +58,9 @@ You'll receive notifications when new water supply information is available.
 @router.message(Command("help"))
 async def cmd_help(message: Message):
     help_text = """
-🛠️ *Water Alert Bot Help*
+🛠️ *Water Alert Bot*
+
+I monitor water supply stats in Yerevan and send notifications when new alerts are posted for your area
 
 *Available Commands:*
 /start - Start the bot and subscribe
@@ -68,9 +70,6 @@ async def cmd_help(message: Message):
 /status - Check your subscription status
 /check - Check current water alerts
 /help - Show this help message
-
-*About:*
-This bot monitors water supply stats and sends you notifications when new alerts are posted for your area
     """
     await message.answer(help_text, parse_mode="Markdown")
 
@@ -145,7 +144,7 @@ async def cmd_change_location(message: Message):
         return
 
     if user.last_location_changed:
-        time_since_last_change = datetime.now() - user.last_location_changed
+        time_since_last_change = datetime.now(timezone.utc) - user.last_location_changed
         hours_since_change = time_since_last_change.total_seconds() / 3600
 
         if hours_since_change < 24:
@@ -190,7 +189,7 @@ async def handle_location_selection(callback: CallbackQuery):
     update_data = {"location": selected_location}
 
     if is_location_change:
-        update_data["last_location_changed"] = datetime.now()
+        update_data["last_location_changed"] = datetime.now(timezone.utc)
 
     user_service.update_user(chat_id, **update_data)
 
