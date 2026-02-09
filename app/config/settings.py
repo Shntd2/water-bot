@@ -107,6 +107,15 @@ class Settings(BaseSettings):
     def parse_available_locations(cls, v):
         return validate_json_list(v, field_name="AVAILABLE_LOCATIONS")
 
+    WHITELIST_LOCATION: list[str] = Field(
+        ...,
+        description="Whitelist of IP addresses allowed to access health endpoint"
+    )
+
+    @field_validator('WHITELIST_LOCATION', mode='before')
+    def parse_whitelist_location(cls, v):
+        return validate_json_list(v, field_name="WHITELIST_LOCATION")
+
     REDIS_URL: str = Field(
         ...,
         description="Redis connection URL"

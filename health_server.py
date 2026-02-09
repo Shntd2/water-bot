@@ -71,7 +71,13 @@ async def root():
 
 
 @app.get("/health")
-async def health_check():
+async def health_check(request: Request):
+    client_ip = request.client.host if request.client else None
+
+    if client_ip not in settings.WHITELIST_LOCATION:
+        logger.warning(f"Health check denied for IP: {client_ip}")
+        return Response(status_code=403)
+
     scheduler: Optional[AsyncIOScheduler] = bot_state["scheduler"]
     is_bot_running = scheduler is not None and scheduler.running if scheduler else False
 
