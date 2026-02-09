@@ -70,9 +70,13 @@ async def root():
     }
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check(request: Request):
-    client_ip = request.client.host if request.client else None
+    client_ip = (
+        request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+        or request.headers.get("X-Real-IP")
+        or (request.client.host if request.client else None)
+    )
 
     if client_ip not in settings.WHITELIST_LOCATION:
         logger.warning(f"Health check denied for IP: {client_ip}")
