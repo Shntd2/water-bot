@@ -45,7 +45,6 @@ water-bot/
 - `/subscribe` - Subscribe to water alerts
 - `/unsubscribe` - Unsubscribe from alerts
 - `/status` - Check your subscription status
-- `/check` - Manually check for current water alerts
 - `/help` - Show help message
 
 ## Configuration

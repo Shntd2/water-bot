@@ -6,7 +6,6 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from datetime import datetime, timezone
 
 from app.services.user_service import user_service
-from app.services.water_scraper import WaterScraper
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,6 @@ This bot monitors water supply alerts for Yerevan and sends you notifications.
 /unsubscribe - Unsubscribe from alerts
 /location - Change your location (once per day)
 /status - Check your subscription status
-/check - Check current water alerts
 /help - Show this help message
 
 You'll receive notifications when new water supply information is available.
@@ -68,7 +66,6 @@ I monitor water supply stats in Yerevan and send notifications when new alerts a
 /unsubscribe - Unsubscribe from alerts
 /location - Change your location (you can change your location only once per day)
 /status - Check your subscription status
-/check - Check current water alerts
 /help - Show this help message
     """
     await message.answer(help_text, parse_mode="Markdown")
@@ -267,56 +264,6 @@ async def cmd_status(message: Message):
         await message.answer(
             "ℹ️ *No subscription found.*\n\n"
             "Use /subscribe to start receiving water alerts.",
-            parse_mode="Markdown"
-        )
-
-
-@router.message(Command("check"))
-async def cmd_check(message: Message):
-    chat_id = message.chat.id
-    user = user_service.get_user(chat_id)
-
-    if not user or not user.location:
-        await message.answer(
-            "ℹ️ *No location set*\n\n"
-            "Please use /subscribe to set your location first.",
-            parse_mode="Markdown"
-        )
-        return
-
-    await message.answer("🔍 Checking for water alerts...", parse_mode="Markdown")
-
-    try:
-        scraper = WaterScraper()
-        alerts = await scraper.get_data(location=user.location)
-
-        if not alerts:
-            await message.answer(
-                f"ℹ️ *No water alerts found for {user.location}*\n\n"
-                "There are currently no water supply alerts for your location.",
-                parse_mode="Markdown"
-            )
-            return
-
-        for alert in alerts:
-            alert_message = f"""
-*Water Alert*
-
-*{alert['title']}*
-
-{alert['message']}
-
-🔗 [View the source]({alert['url']})
-            """
-            await message.answer(alert_message, parse_mode="Markdown")
-
-        logger.info(f"Manual check performed by user {chat_id}, found {len(alerts)} alerts for {user.location}")
-
-    except Exception as e:
-        logger.error(f"Error checking alerts for user {chat_id}: {e}", exc_info=True)
-        await message.answer(
-            "❌ *Error checking alerts*\n\n"
-            "Sorry, there was an error retrieving water alerts. Please try again later.",
             parse_mode="Markdown"
         )
 

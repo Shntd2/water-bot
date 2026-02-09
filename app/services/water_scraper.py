@@ -27,15 +27,10 @@ class WaterScraper(BaseScraper):
         )
 
     def get_cache_key(self, location: Optional[str] = None) -> str:
-        return f"water_alerts_{location or 'default'}"
+        return "water_alerts_all"
 
     async def get_data(self, location: Optional[str] = None) -> List[Dict[str, Any]]:
-        if not location:
-            logger.error("No location provided for water alert scraping")
-            return []
-
-        search_term = location
-        cache_key = self.get_cache_key(search_term)
+        cache_key = self.get_cache_key()
 
         if self.is_cache_valid(cache_key):
             return self.cache[cache_key]['data']
@@ -57,13 +52,9 @@ class WaterScraper(BaseScraper):
                     logger.info(f"Found {len(accordion_links)} accordion links on page {page_num}")
 
                     for link in accordion_links:
-                        raw_title = link.get_text().strip()
-                        title = self.WHITESPACE_PATTERN.sub(' ', raw_title)
-
-                        if search_term in title:
-                            alert_data = self._extract_item_data(link)
-                            if alert_data:
-                                alerts.append(alert_data)
+                        alert_data = self._extract_item_data(link)
+                        if alert_data:
+                            alerts.append(alert_data)
 
                 except Exception as e:
                     logger.warning(f"Failed to scrape page {page_num}: {e}")
@@ -73,10 +64,11 @@ class WaterScraper(BaseScraper):
                 'data': alerts,
                 'timestamp': datetime.now()
             }
+            logger.info(f"Scraped and cached {len(alerts)} total water alerts")
             return alerts
 
         except Exception as e:
-            logger.error(f"Water scraping failed for {cache_key}: {e}", exc_info=True)
+            logger.error(f"Water scraping failed: {e}", exc_info=True)
             return self._handle_scraping_failure(cache_key)
 
     def _extract_item_data(self, element) -> Optional[Dict[str, Any]]:

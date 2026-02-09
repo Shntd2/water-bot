@@ -80,20 +80,27 @@ class BotService:
 
             scraper = WaterScraper()
 
-            for location, users in users_by_location.items():
-                logger.info(f"Checking alerts for location: {location} ({len(users)} users)")
+            try:
+                all_alerts = await scraper.get_data()
+                logger.info(f"Scraped {len(all_alerts)} total water alerts")
 
-                try:
-                    alerts = await scraper.get_data(location=location)
+                if not all_alerts:
+                    logger.info("No water alerts found")
+                    return
 
-                    if not alerts:
+                for location, users in users_by_location.items():
+                    logger.info(f"Filtering alerts for location: {location} ({len(users)} users)")
+
+                    location_alerts = [alert for alert in all_alerts if location in alert.get('title', '')]
+
+                    if not location_alerts:
                         logger.info(f"No water alerts found for {location}")
                         continue
 
-                    logger.info(f"Found {len(alerts)} water alerts for {location}")
+                    logger.info(f"Found {len(location_alerts)} water alerts for {location}")
 
                     for user in users:
-                        for alert in alerts:
+                        for alert in location_alerts:
                             alert_id = alert.get('story_id')
 
                             if alert_id and await redis_service.has_alert_been_sent(user.chat_id, alert_id):
@@ -109,9 +116,8 @@ class BotService:
 
                             await asyncio.sleep(0.1)
 
-                except Exception as e:
-                    logger.error(f"Error checking alerts for location {location}: {e}", exc_info=True)
-                    continue
+            except Exception as e:
+                logger.error(f"Error during alert check: {e}", exc_info=True)
 
             logger.info("Scheduled alert check completed successfully")
 
