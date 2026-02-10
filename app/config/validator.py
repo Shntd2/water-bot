@@ -22,12 +22,16 @@ def validate_json_dict(value, field_name: str = "field") -> dict:
         if not value or value.isspace():
             raise ValueError(f"{field_name} cannot be empty")
         try:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Attempting to parse {field_name}: {value[:100]}... (length: {len(value)})")
+
             parsed = json.loads(value)
             if not isinstance(parsed, dict):
                 raise ValueError(f"{field_name} must be a JSON object")
             return parsed
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON for {field_name}: {e}")
+            raise ValueError(f"Invalid JSON for {field_name}: {e}. Raw value: {value[:200]}")
     elif isinstance(value, dict):
         return value
     raise ValueError(f"{field_name} must be a dict or JSON string, got {type(value)}")
