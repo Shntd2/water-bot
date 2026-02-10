@@ -24,6 +24,10 @@ def create_location_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
+async def handle_location_name(location: str) -> str:
+    return next((k for k, v in AVAILABLE_LOCATIONS.items() if v == location), location)
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     chat_id = message.chat.id
@@ -148,17 +152,18 @@ async def cmd_change_location(message: Message):
             hours_remaining = 24 - hours_since_change
             await message.answer(
                 f"⏳ *Rate limit exceeded*\n\n"
-                f"You can only change your location once per day.\n\n"
+                f"You can only change your location once per day\n\n"
                 f"Time remaining: *{int(hours_remaining)} hours {int((hours_remaining % 1) * 60)} minutes*\n\n"
-                f"Please try again later.",
+                f"Please try again later",
                 parse_mode="Markdown"
             )
             logger.info(f"User {chat_id} attempted location change but hit rate limit")
             return
 
+    english_location = await handle_location_name(user.location)
     await message.answer(
         f"📍 *Change your location*\n\n"
-        f"Current location: *{user.location}*\n\n"
+        f"Current location: *{english_location}*\n\n"
         f"Select a new location from the list below:",
         reply_markup=create_location_keyboard(),
         parse_mode="Markdown"
@@ -246,15 +251,13 @@ async def cmd_status(message: Message):
         if user.last_notified:
             last_notified_text = user.last_notified.strftime('%Y-%m-%d %H:%M')
 
-        english_location = next((k for k, v in AVAILABLE_LOCATIONS.items() if v == user.location), user.location)
+        english_location = await handle_location_name(user.location)
 
         status_message = f"""
 {status_emoji} *Subscription Status: {status_text}*
 
 *User Info:*
-• Chat ID: `{user.chat_id}`
 • Username: @{user.username or 'N/A'}
-• Name: {user.first_name or ''} {user.last_name or ''}
 
 *Subscription Details:*
 • Location: *{english_location}*
