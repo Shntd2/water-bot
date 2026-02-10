@@ -2,7 +2,7 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, field_validator
 
-from .validator import validate_json_list
+from .validator import validate_json_list, validate_json_dict
 
 
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
@@ -98,14 +98,14 @@ class Settings(BaseSettings):
         ...,
         description="Base URL"
     )
-    AVAILABLE_LOCATIONS: list[str] = Field(
+    AVAILABLE_LOCATIONS: dict[str, str] = Field(
         ...,
         description="Tracking available districts"
     )
 
     @field_validator('AVAILABLE_LOCATIONS', mode='before')
     def parse_available_locations(cls, v):
-        return validate_json_list(v, field_name="AVAILABLE_LOCATIONS")
+        return validate_json_dict(v, field_name="AVAILABLE_LOCATIONS")
 
     WHITELIST_LOCATION: list[str] = Field(
         ...,

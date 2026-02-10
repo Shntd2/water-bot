@@ -16,10 +16,10 @@ AVAILABLE_LOCATIONS = settings.AVAILABLE_LOCATIONS
 
 def create_location_keyboard() -> InlineKeyboardMarkup:
     buttons = []
-    for location in AVAILABLE_LOCATIONS:
+    for key, armenian_name in AVAILABLE_LOCATIONS.items():
         buttons.append([InlineKeyboardButton(
-            text=location,
-            callback_data=f"location:{location}"
+            text=key,
+            callback_data=f"location:{key}"
         )])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -183,7 +183,8 @@ async def handle_location_selection(callback: CallbackQuery):
     is_location_change = user.location is not None
     old_location = user.location
 
-    update_data = {"location": selected_location}
+    armenian_location = AVAILABLE_LOCATIONS[selected_location]
+    update_data = {"location": armenian_location}
 
     if is_location_change:
         update_data["last_location_changed"] = datetime.now(timezone.utc)
@@ -245,6 +246,8 @@ async def cmd_status(message: Message):
         if user.last_notified:
             last_notified_text = user.last_notified.strftime('%Y-%m-%d %H:%M')
 
+        english_location = next((k for k, v in AVAILABLE_LOCATIONS.items() if v == user.location), user.location)
+
         status_message = f"""
 {status_emoji} *Subscription Status: {status_text}*
 
@@ -254,7 +257,7 @@ async def cmd_status(message: Message):
 • Name: {user.first_name or ''} {user.last_name or ''}
 
 *Subscription Details:*
-• Location: *{user.location}*
+• Location: *{english_location}*
 • Subscribed since: {user.subscribed_at.strftime('%Y-%m-%d %H:%M')}
 • Last notification: {last_notified_text}
         """
