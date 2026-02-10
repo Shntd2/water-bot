@@ -1,4 +1,5 @@
 import re
+import hashlib
 from typing import Optional, List, Dict, Any, Tuple
 import logging
 from datetime import datetime
@@ -102,7 +103,9 @@ class WaterScraper(BaseScraper):
 
             alert_data['url'] = self.BASE_URL
             alert_data['published_at'] = datetime.now().isoformat()
-            alert_data['story_id'] = str(hash(alert_data['title'] + alert_data['message']))
+
+            content = alert_data['title'] + alert_data['message']
+            alert_data['story_id'] = hashlib.md5(content.encode('utf-8')).hexdigest()
 
             return alert_data
 
