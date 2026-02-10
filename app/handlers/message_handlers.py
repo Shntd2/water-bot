@@ -82,9 +82,10 @@ async def cmd_subscribe(message: Message):
 
     if user:
         if user.is_active and user.location:
+            english_location = await handle_location_name(user.location)
             await message.answer(
                 "✅ You are already subscribed to water alerts!\n\n"
-                f"Location: *{user.location}*\n"
+                f"Location: *{english_location}*\n"
                 f"Subscribed since: {user.subscribed_at.strftime('%Y-%m-%d %H:%M')}",
                 parse_mode="Markdown"
             )
@@ -96,10 +97,11 @@ async def cmd_subscribe(message: Message):
                 parse_mode="Markdown"
             )
         else:
+            english_location = await handle_location_name(user.location)
             user_service.update_user(chat_id, is_active=True)
             await message.answer(
                 "✅ *Subscription reactivated!*\n\n"
-                f"You will now receive water alerts again for: *{user.location}*",
+                f"You will now receive water alerts again for: *{english_location}*",
                 parse_mode="Markdown"
             )
             logger.info(f"User resubscribed: {chat_id}")
